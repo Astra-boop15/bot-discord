@@ -9,8 +9,18 @@ Bot Discord en Node.js utilisant Discord.js v14.
 3. Copie `.env.example` en `.env` puis renseigne :
    - `DISCORD_TOKEN` : token disponible dans **Developer Portal → ton application → Bot**
    - `CLIENT_ID` : Application ID disponible dans **General Information**
-4. Déploie les commandes : `npm run deploy`
-5. Lance le bot : `npm start`
+   - `COMMAND_PREFIX` (facultatif) : préfixe des commandes texte, `*` par défaut
+4. Dans le **Discord Developer Portal → Bot → Privileged Gateway Intents**, active **Message Content Intent** pour autoriser les commandes avec préfixe.
+5. Déploie les commandes slash : `npm run deploy`
+6. Lance le bot : `npm start`
+
+## Utiliser le bot dans Discord
+
+Les commandes slash restent disponibles : `/ping`, `/aide` et `/dashboard`.
+
+Les mêmes fonctions sont accessibles avec le préfixe `*` : `*ping`, `*aide` et `*dashboard`. La forme `*ma ping` (ainsi que `*ma aide` et `*ma dashboard`) fonctionne également.
+
+`/dashboard` ou `*dashboard` affiche un tableau de bord interactif directement dans Discord, avec des boutons pour tester la latence et afficher l'aide.
 
 ## Hébergement 24/7
 

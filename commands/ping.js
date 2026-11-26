@@ -5,11 +5,9 @@ module.exports = {
     .setName('ping')
     .setDescription('Affiche la latence du bot'),
   async execute(interaction) {
-    const sent = await interaction.reply({
-      content: 'Calcul de la latence...',
-      fetchReply: true
-    });
-
-    await interaction.editReply(`Pong ! Latence: ${sent.createdTimestamp - interaction.createdTimestamp} ms`);
+    await interaction.reply({ content: `Pong ! Latence : ${Math.round(interaction.client.ws.ping)} ms` });
+  },
+  async executeMessage(message) {
+    await message.reply(`Pong ! Latence : ${Math.round(message.client.ws.ping)} ms`);
   }
 };
