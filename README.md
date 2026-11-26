@@ -1,29 +1,28 @@
 # Bot Discord Astra
 
-Bot Discord en Node.js utilisant Discord.js v14.
+Bot Discord Node.js avec commandes simples, modération et tickets privés.
 
-## Installation locale
+## Installation
 
-1. Installe Node.js 18 ou plus récent.
-2. Installe les dépendances : `npm install`
-3. Copie `.env.example` en `.env` puis renseigne `DISCORD_TOKEN`, `CLIENT_ID` et éventuellement `COMMAND_PREFIX` (par défaut `*`).
-4. Dans Discord Developer Portal → **Bot → Privileged Gateway Intents**, active **Message Content Intent** pour les commandes avec préfixe.
-5. Déploie les commandes slash : `npm run deploy`, puis démarre avec `npm start`.
+1. Node.js 18+ puis `npm install`.
+2. Copie `.env.example` vers `.env`, renseigne `DISCORD_TOKEN` et `CLIENT_ID`.
+3. Active **Message Content Intent** dans Discord Developer Portal → Bot pour les commandes `*`.
+4. Lance `npm run deploy` pour publier les commandes slash, puis `npm start`.
 
-## Langue
+## Tableau de bord interactif
 
-La langue se règle par serveur avec `/language set` puis `Français` ou `English (UK)`. La commande demande la permission **Manage Server**. Avec le préfixe : `*ma langue fr` ou `*ma langue en`. Le réglage est enregistré localement dans `data/guild-settings.json` ; pour plusieurs instances, utilise un stockage partagé.
+Utilise `/dashboard` ou `*ma dashboard`. Le menu déroulant affiche les commandes classées par catégorie : général, modération, tickets et configuration. Les boutons permettent de tester le bot et de créer un ticket. L’interface est intégrée à Discord ; elle ne nécessite pas de site web.
 
-## Commandes
+## Tickets
 
-Commandes générales : `/ping`, `/aide`, `/dashboard`. Les commandes de modération sont `/ban`, `/kick`, `/timeout`, `/clear` et `/warn`. Elles sont également accessibles avec le préfixe : `*ma ban @membre raison`, `*ma kick @membre raison`, `*ma timeout @membre 10 raison`, `*ma clear 10`, `*ma warn @membre raison`.
+Un administrateur configure le panneau avec `/ticket setup`, choisit le salon public et peut sélectionner une catégorie de tickets et un rôle support. Les membres cliquent ensuite sur **Créer un ticket**. Les salons créés sont privés pour le créateur, le bot et le rôle support ; le créateur ou le staff peut fermer un ticket avec le bouton ou `/ticket close`. Un membre ne peut avoir qu’un ticket ouvert à la fois.
 
-Chaque commande de modération vérifie les permissions requises. Donne au bot uniquement les permissions nécessaires, place son rôle au-dessus des rôles qu’il doit modérer, et garde les permissions de modération réservées aux personnes de confiance. `/dashboard` affiche un aperçu interactif dans Discord.
+`/ticket create` ouvre aussi directement un ticket. En préfixe : `*ma ticket create` et `*ma ticket close`.
 
-## Hébergement 24/7
+Le bot a besoin des permissions **Manage Channels**, **View Channels**, **Send Messages** et **Read Message History**. Configure également les permissions du rôle support dans le serveur. Les paramètres des tickets sont stockés localement dans `data/ticket-settings.json` ; sauvegarde ce fichier et utilise un stockage partagé si le bot tourne sur plusieurs instances.
 
-Le bot reste actif seulement tant que son processus tourne. Tu peux l’héberger sur un VPS ou une plateforme d’hébergement. Ne mets jamais le token directement dans le dépôt ; ajoute `DISCORD_TOKEN` et `CLIENT_ID` comme variables secrètes. Sauvegarde aussi `data/guild-settings.json` pour conserver les préférences de langue.
+## Langue et modération
 
-## Sécurité
+Utilise `/language set` pour choisir Français ou English (UK). Commandes de modération : `/ban`, `/kick`, `/timeout`, `/clear`, `/warn`.
 
-Ne partage ni ne commite jamais `.env` ni ton token. Si un token a été publié, réinitialise-le dans le Developer Portal.
+Ne publie jamais ton token ni le fichier `.env`. Si un token a été exposé, réinitialise-le dans le Developer Portal.
