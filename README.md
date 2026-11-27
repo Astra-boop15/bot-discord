@@ -1,28 +1,27 @@
 # Bot Discord Astra
 
-Bot Discord Node.js avec commandes simples, modération et tickets privés.
+Bot Discord Node.js avec commandes simples, modération, tickets privés, anti-raid et rôle automatique.
 
 ## Installation
 
 1. Node.js 18+ puis `npm install`.
 2. Copie `.env.example` vers `.env`, renseigne `DISCORD_TOKEN` et `CLIENT_ID`.
-3. Active **Message Content Intent** dans Discord Developer Portal → Bot pour les commandes `*`.
+3. Active **Message Content Intent** et **Server Members Intent** dans Discord Developer Portal → Bot pour les commandes préfixées et les actions à l’arrivée.
 4. Lance `npm run deploy` pour publier les commandes slash, puis `npm start`.
+5. Donne au bot **Manage Roles** et place son rôle au-dessus du rôle automatique choisi. Pour l’anti-raid, donne-lui aussi **Moderate Members**.
 
-## Tableau de bord interactif
+Les commandes préfixées utilisent `*ma` (ex. `*ma aide`). Les commandes slash restent disponibles. Les réponses et l’aide suivent la langue choisie avec `*ma language en` ou `*ma language fr` (permission **Manage Server**).
 
-Utilise `/dashboard` ou `*ma dashboard`. Le menu déroulant affiche les commandes classées par catégorie : général, modération, tickets et configuration. Les boutons permettent de tester le bot et de créer un ticket. L’interface est intégrée à Discord ; elle ne nécessite pas de site web.
+## Rôle automatique
 
-## Tickets
+Un administrateur configure le rôle qui sera attribué aux nouveaux membres : `*ma autorole set @Membre`. Vérifie-le avec `*ma autorole show` et désactive-le avec `*ma autorole off`. Équivalents slash : `/autorole set`, `/autorole show`, `/autorole off`. L’attribution concerne les nouveaux membres qui rejoignent après la configuration ; le bot ne modifie pas rétroactivement les rôles des membres existants.
 
-Un administrateur configure le panneau avec `/ticket setup`, choisit le salon public et peut sélectionner une catégorie de tickets et un rôle support. Les membres cliquent ensuite sur **Créer un ticket**. Les salons créés sont privés pour le créateur, le bot et le rôle support ; le créateur ou le staff peut fermer un ticket avec le bouton ou `/ticket close`. Un membre ne peut avoir qu’un ticket ouvert à la fois.
+## Anti-raid
 
-`/ticket create` ouvre aussi directement un ticket. En préfixe : `*ma ticket create` et `*ma ticket close`.
+`*ma antiraid on` active la protection, `*ma antiraid off` la désactive et `*ma antiraid status` affiche son état. Le seuil se règle avec `*ma antiraid config 8 10` (8 arrivées en 10 secondes). Lorsqu’un seuil est atteint, le dernier compte arrivé reçoit un timeout temporaire de 15 minutes. Ces commandes demandent **Manage Server**.
 
-Le bot a besoin des permissions **Manage Channels**, **View Channels**, **Send Messages** et **Read Message History**. Configure également les permissions du rôle support dans le serveur. Les paramètres des tickets sont stockés localement dans `data/ticket-settings.json` ; sauvegarde ce fichier et utilise un stockage partagé si le bot tourne sur plusieurs instances.
+## Tickets et modération
 
-## Langue et modération
-
-Utilise `/language set` pour choisir Français ou English (UK). Commandes de modération : `/ban`, `/kick`, `/timeout`, `/clear`, `/warn`.
+Configure le panneau avec `/ticket setup`, puis utilise `*ma ticket create` ou `*ma ticket close`. Modération : `*ma ban`, `*ma kick`, `*ma timeout`, `*ma clear`, `*ma warn` (les permissions requises restent nécessaires).
 
 Ne publie jamais ton token ni le fichier `.env`. Si un token a été exposé, réinitialise-le dans le Developer Portal.

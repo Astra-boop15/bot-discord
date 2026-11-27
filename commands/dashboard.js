@@ -10,20 +10,20 @@ const { getLanguage, t } = require('../lib/language');
 
 const pages = {
   general: {
-    fr: ['Commandes générales', '`/ping` — vérifier la latence\n`/aide` — afficher l’aide\n`/dashboard` — ouvrir ce tableau de bord\n`/language` — choisir la langue'],
-    en: ['General commands', '`/ping` — check latency\n`/aide` — show help\n`/dashboard` — open this dashboard\n`/language` — choose server language']
+    fr: ['Commandes générales', '`*ma ping` — vérifier la latence\n`*ma aide` — afficher l’aide\n`*ma dashboard` — ouvrir ce tableau de bord'],
+    en: ['General commands', '`*ma ping` — check latency\n`*ma aide` — show help\n`*ma dashboard` — open this dashboard']
   },
   moderation: {
-    fr: ['Modération', '`/ban membre raison` — bannir\n`/kick membre raison` — expulser\n`/timeout membre minutes raison` — appliquer un délai\n`/clear quantité` — supprimer des messages\n`/warn membre raison` — avertir'],
-    en: ['Moderation', '`/ban member reason` — ban a member\n`/kick member reason` — kick a member\n`/timeout member minutes reason` — timeout a member\n`/clear amount` — delete messages\n`/warn member reason` — warn a member']
+    fr: ['Modération', '`*ma ban @membre raison` — bannir\n`*ma kick @membre raison` — expulser\n`*ma timeout @membre minutes raison` — appliquer un délai\n`*ma clear quantité` — supprimer des messages\n`*ma warn @membre raison` — avertir'],
+    en: ['Moderation', '`*ma ban @member reason` — ban a member\n`*ma kick @member reason` — kick a member\n`*ma timeout @member minutes reason` — timeout a member\n`*ma clear amount` — delete messages\n`*ma warn @member reason` — send a warning']
   },
   tickets: {
-    fr: ['Tickets', '`/ticket setup` — publier le panneau (admin)\n`/ticket create` — ouvrir un ticket\n`/ticket close` — fermer le ticket courant'],
-    en: ['Tickets', '`/ticket setup` — post the panel (admin)\n`/ticket create` — open a ticket\n`/ticket close` — close the current ticket']
+    fr: ['Tickets', '`*ma ticket create` — ouvrir un ticket\n`*ma ticket close` — fermer le ticket courant\n`/ticket setup` — configurer le panneau (admin)'],
+    en: ['Tickets', '`*ma ticket create` — open a ticket\n`*ma ticket close` — close the current ticket\n`/ticket setup` — configure the panel (admin)']
   },
   settings: {
-    fr: ['Configuration', '`/language set` — choisir Français ou English (UK)\nLes commandes préfixées commencent par `*ma`, par exemple `*ma ticket create`.'],
-    en: ['Settings', '`/language set` — choose Français or English (UK)\nPrefix commands start with `*ma`, for example `*ma ticket create`.']
+    fr: ['Configuration', '`*ma language fr` / `*ma language en` — choisir la langue\n`*ma antiraid on|off|status` — protection anti-raid\n`*ma autorole set @rôle` / `*ma autorole off` — rôle automatique'],
+    en: ['Settings', '`*ma language fr` / `*ma language en` — choose the language\n`*ma antiraid on|off|status` — anti-raid protection\n`*ma autorole set @role` / `*ma autorole off` — automatic member role']
   }
 };
 

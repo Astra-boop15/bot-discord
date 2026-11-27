@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, GatewayIntentBits, Events, Partials, AuditLogEvent, PermissionFlagsBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, Partials, PermissionFlagsBits } = require('discord.js');
 const { getLanguage, t } = require('./lib/language');
 const ticketCommand = require('./commands/ticket');
 const { dashboardPayload } = require('./commands/dashboard');
@@ -16,7 +16,10 @@ client.commands = new Collection();
 const antiRaidPath = path.join(__dirname, 'data', 'anti-raid.json');
 function readAntiRaid() {
   try { return JSON.parse(fs.readFileSync(antiRaidPath, 'utf8')); }
-  catch (error) { return {}; }
+  catch (error) {
+    if (error.code !== 'ENOENT') console.error('Could not read anti-raid settings:', error);
+    return {};
+  }
 }
 function saveAntiRaid(settings) {
   fs.mkdirSync(path.dirname(antiRaidPath), { recursive: true });
@@ -35,19 +38,22 @@ client.once(Events.ClientReady, (readyClient) => console.log(`Bot connecté en t
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot || !message.guild) return;
 
-  // Prefixes supported: *ma, **ma and * / ** (the latter stay optional aliases).
-  const match = message.content.match(/^((?:\*ma|\*\*ma|\*|\*\*))\s*(.*)$/i);
+  // Prefix commands consistently use *ma; slash commands remain available separately.
+  const match = message.content.match(/^\*ma\s+(.+)$/i);
   if (!match) return;
-  const [, , input] = match;
-  const [commandName, ...args] = input.trim().split(/\s+/);
+  const [commandName, ...args] = match[1].trim().split(/\s+/);
   if (!commandName) return;
 
+  const language = getLanguage(message.guildId);
   const command = client.commands.get(commandName.toLowerCase());
   if (!command || typeof command.executeMessage !== 'function') {
-    return message.reply(`Commande inconnue. Essaie \`*ma aide\`, \`**ma aide\` ou \`/aide\`.`);
+    return message.reply(t(language, 'unknownCommand'));
   }
   try { await command.executeMessage(message, args); }
-  catch (error) { console.error(error); await message.reply('Une erreur est survenue pendant cette commande.'); }
+  catch (error) {
+    console.error(error);
+    await message.reply(t(language, 'commandError')).catch(() => {});
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -77,71 +83,94 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await command.execute(interaction);
   } catch (error) {
     console.error(error);
-    const response = { content: 'Une erreur est survenue.', ephemeral: true };
+    const response = { content: t(language, 'commandError'), ephemeral: true };
     if (interaction.replied || interaction.deferred) await interaction.followUp(response);
     else await interaction.reply(response);
   }
 });
 
-// Anti-raid: detect and quarantine unusually rapid joins.
-// Configure with *ma antiraid on or *ma antiraid off (Manage Guild permission required).
+// Assign the configured member role and apply anti-raid protection on join.
 const joins = new Map();
 client.on(Events.GuildMemberAdd, async (member) => {
-  const settings = readAntiRaid()[member.guild.id];
-  if (!settings?.enabled) return;
+  const language = getLanguage(member.guild.id);
 
-  const now = Date.now();
-  const windowMs = settings.windowMs || 10_000;
-  const threshold = settings.threshold || 8;
-  const recent = (joins.get(member.guild.id) || []).filter((time) => now - time < windowMs);
-  recent.push(now);
-  joins.set(member.guild.id, recent);
-
-  if (recent.length >= threshold) {
-    const botMember = member.guild.members.me;
-    if (!botMember?.permissions.has(PermissionFlagsBits.ModerateMembers)) return;
-
-    try {
-      await member.timeout(15 * 60 * 1000, 'Anti-raid: détection de joins rapides');
-      const channel = member.guild.systemChannel;
-      if (channel?.isTextBased()) {
-        await channel.send(`⚠️ Anti-raid activé : ${member} a été isolé pendant 15 minutes après une vague d’arrivées.`).catch(() => {});
+  try {
+    const autoRoleId = require('./commands/autorole').getConfiguredRoleId(member.guild.id);
+    if (!member.user.bot && autoRoleId) {
+      const role = await member.guild.roles.fetch(autoRoleId).catch(() => null);
+      const botMember = member.guild.members.me || await member.guild.members.fetchMe().catch(() => null);
+      if (role && botMember?.permissions.has(PermissionFlagsBits.ManageRoles) && role.position < botMember.roles.highest.position) {
+        await member.roles.add(role, 'Configured automatic member role');
+      } else if (role) {
+        console.warn(`Could not assign auto-role ${role.id} in guild ${member.guild.id}: check Manage Roles and role hierarchy.`);
       }
-      joins.set(member.guild.id, []);
-    } catch (error) {
-      console.error('Anti-raid action failed:', error);
     }
+  } catch (error) {
+    console.error('Automatic role assignment failed:', error);
+  }
+
+  try {
+    const settings = readAntiRaid()[member.guild.id];
+    if (!settings?.enabled) return;
+
+    const now = Date.now();
+    const windowMs = settings.windowMs || 10_000;
+    const threshold = settings.threshold || 8;
+    const recent = (joins.get(member.guild.id) || []).filter((time) => now - time < windowMs);
+    recent.push(now);
+    joins.set(member.guild.id, recent);
+    if (recent.length < threshold) return;
+
+    const botMember = member.guild.members.me || await member.guild.members.fetchMe().catch(() => null);
+    if (!botMember?.permissions.has(PermissionFlagsBits.ModerateMembers)) return;
+    await member.timeout(15 * 60 * 1000, 'Anti-raid: rapid join detection');
+    const channel = member.guild.systemChannel;
+    if (channel?.isTextBased()) await channel.send(t(language, 'antiRaidTriggered', `<@${member.id}>`)).catch(() => {});
+    joins.set(member.guild.id, []);
+  } catch (error) {
+    console.error('Anti-raid action failed:', error);
   }
 });
 
-// Prefix administration command for anti-raid.
 const antiRaidCommand = {
   data: {
     name: 'antiraid',
     toJSON() { return { name: 'antiraid', description: 'Configure anti-raid protection' }; }
   },
   executeMessage: async (message, args) => {
+    const language = getLanguage(message.guildId);
     if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-      return message.reply(t(getLanguage(message.guildId), 'noPermission'));
+      return message.reply(t(language, 'noPermission'));
     }
-    const action = (args[0] || '').toLowerCase();
+    const action = (args[0] || 'status').toLowerCase();
     const all = readAntiRaid();
     all[message.guildId] ||= {};
+    const settings = all[message.guildId];
 
-    if (action === 'on') {
-      all[message.guildId].enabled = true;
-      all[message.guildId].threshold ||= 8;
-      all[message.guildId].windowMs ||= 10_000;
+    if (action === 'on' || action === 'enable') {
+      settings.enabled = true;
+      settings.threshold ||= 8;
+      settings.windowMs ||= 10_000;
       saveAntiRaid(all);
-      return message.reply('🛡️ Anti-raid activé : 8 arrivées en 10 secondes déclenchent une mise en timeout temporaire.');
+      return message.reply(t(language, 'antiRaidOn', settings.threshold, settings.windowMs / 1000));
     }
-    if (action === 'off') {
-      all[message.guildId].enabled = false;
+    if (action === 'off' || action === 'disable') {
+      settings.enabled = false;
       saveAntiRaid(all);
-      return message.reply('🛡️ Anti-raid désactivé.');
+      return message.reply(t(language, 'antiRaidOff'));
     }
-    const enabled = all[message.guildId].enabled === true;
-    return message.reply(`🛡️ Anti-raid : **${enabled ? 'activé' : 'désactivé'}**. Utilise \`*ma antiraid on\` ou \`*ma antiraid off\`.`);
+    if (action === 'config' || action === 'set') {
+      const threshold = Number(args[1]);
+      const seconds = Number(args[2]);
+      if (!Number.isInteger(threshold) || threshold < 2 || threshold > 50 || !Number.isInteger(seconds) || seconds < 5 || seconds > 60) {
+        return message.reply(t(language, 'antiRaidUsage'));
+      }
+      settings.threshold = threshold;
+      settings.windowMs = seconds * 1000;
+      saveAntiRaid(all);
+      return message.reply(t(language, 'antiRaidConfigured', threshold, seconds));
+    }
+    return message.reply(t(language, 'antiRaidStatus', settings.enabled === true, settings.threshold || 8, (settings.windowMs || 10_000) / 1000));
   }
 };
 client.commands.set('antiraid', antiRaidCommand);
